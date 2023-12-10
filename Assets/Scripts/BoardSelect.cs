@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class BoardSelect : MonoBehaviour
 {
-    private bool isInCollider = false;
+    private bool isControllerInCollider = false;
+    private bool isObjectSelected = false;
     private GameObject selectedObject = null;
 
-    //OVR input
+
     public OVRInput.Controller controller;
     private float triggerValue;
-    private bool isSelected = false;
 
     // Start is called before the first frame update
     void Start()
@@ -22,7 +22,7 @@ public class BoardSelect : MonoBehaviour
     {
         if (other.gameObject.name == "GameBoard")
         {
-            isInCollider = true;
+            isControllerInCollider = true;
             selectedObject = other.gameObject;
         }
     }
@@ -31,7 +31,7 @@ public class BoardSelect : MonoBehaviour
     {
         if (other.gameObject.name == "GameBoard")
         {
-            isInCollider = false;
+            isControllerInCollider = false;
             selectedObject = null;
         }
     }
@@ -41,21 +41,36 @@ public class BoardSelect : MonoBehaviour
     {
         triggerValue = OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, controller);
 
-        if (isInCollider) {
-            if(!isSelected && triggerValue > 0.95f) {
-                isSelected = true;
+        if (isControllerInCollider) {
+            // Select object
+            if(!isObjectSelected && triggerValue > 0.95f) {
+                isObjectSelected = true;
+
+                // Make the object a child of the controller
                 selectedObject.transform.parent = transform;
+
+                // Disable physics to follow the controller
                 Rigidbody rb = selectedObject.GetComponent<Rigidbody>();
                 rb.isKinematic = true;
                 rb.useGravity = false;
+
+                // Reset velocity
                 rb.velocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
-            } else if (isSelected && triggerValue < 0.95f) {
-                isSelected = false;
+            } 
+            // Deselect object
+            else if (isObjectSelected && triggerValue < 0.95f) {
+                isObjectSelected = false;
+
+                // Remove the object from the controller
                 selectedObject.transform.parent = null;
+
+                // Enable back physics
                 Rigidbody rb = selectedObject.GetComponent<Rigidbody>();
                 rb.isKinematic = false;
                 rb.useGravity = true;
+
+                // The object inherits the velocity of the controller (we can throw it)
                 rb.velocity = OVRInput.GetLocalControllerVelocity(controller);
                 rb.angularVelocity = OVRInput.GetLocalControllerAngularVelocity(controller);
             }
